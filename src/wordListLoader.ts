@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import type { App } from 'obsidian';
+import { normalizePath, type App, TFile } from 'obsidian';
 
 const WORD_LIST_FILE = 'word-list.csv';
 
@@ -29,8 +29,17 @@ export async function loadDictionaryEntries(
 	let csvText: string;
 
 	try {
-		csvText = await app.vault.adapter.read(dictionaryPath);
-	} catch {
+		const file = app.vault.getAbstractFileByPath(dictionaryPath);
+		if (file instanceof TFile) {
+			csvText = await app.vault.cachedRead(file);
+		} else {
+			// Plugin assets live under .obsidian/plugins/... and may not be indexed as TFile entries.
+			csvText = await app.vault.adapter.read(dictionaryPath);
+		}
+	} catch (error) {
+		if (error instanceof DictionaryLoadError) {
+			throw error;
+		}
 		throw new DictionaryLoadError(
 			`Could not read ${dictionaryPath}. Ensure ${WORD_LIST_FILE} is in the plugin data folder.`,
 		);
@@ -69,7 +78,7 @@ export async function loadDictionaryEntries(
 }
 
 function getDictionaryPath(pluginId: string): string {
-	return `.obsidian/plugins/${pluginId}/data/${WORD_LIST_FILE}`;
+	return normalizePath(`.obsidian/plugins/${pluginId}/data/${WORD_LIST_FILE}`);
 }
 
 function clean(value: string | undefined): string {

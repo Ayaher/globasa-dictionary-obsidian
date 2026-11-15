@@ -69,7 +69,7 @@ export class DictionaryPanelView extends ItemView {
 
 		this.inputEl = searchRowEl.createEl('input', {
 			type: 'search',
-			placeholder: 'Search globasa or english...',
+			placeholder: 'Search Globasa or English...',
 			cls: 'globasa-dictionary-search-input',
 		});
 
@@ -78,7 +78,7 @@ export class DictionaryPanelView extends ItemView {
 			cls: 'globasa-dictionary-clear-button',
 		});
 		this.clearButtonEl.type = 'button';
-		this.clearButtonEl.addEventListener('click', () => {
+		this.registerDomEvent(this.clearButtonEl, 'click', () => {
 			if (!this.inputEl) {
 				return;
 			}
@@ -95,7 +95,7 @@ export class DictionaryPanelView extends ItemView {
 			cls: 'globasa-dictionary-results',
 		});
 
-		this.inputEl.addEventListener('input', () => {
+		this.registerDomEvent(this.inputEl, 'input', () => {
 			this.renderResults(this.inputEl?.value ?? '');
 		});
 
@@ -137,10 +137,10 @@ export class DictionaryPanelView extends ItemView {
 			rowEl.setAttribute('role', 'button');
 			rowEl.setAttribute('tabindex', '0');
 			rowEl.setAttribute('aria-label', `Copy ${entry.word} to clipboard`);
-			rowEl.addEventListener('click', () => {
+			this.registerDomEvent(rowEl, 'click', () => {
 				void this.copyWordToClipboard(entry.word);
 			});
-			rowEl.addEventListener('keydown', (event) => {
+			this.registerDomEvent(rowEl, 'keydown', (event) => {
 				if (event.key === 'Enter' || event.key === ' ') {
 					event.preventDefault();
 					void this.copyWordToClipboard(entry.word);
@@ -187,19 +187,19 @@ export class DictionaryPanelView extends ItemView {
 
 		if (this.inputEl?.value.trim().length === 0) {
 			this.countEl.setText(
-				`showing ${visibleCount} of ${totalEntries} entries — keep typing to narrow.`,
+				`Showing ${visibleCount} of ${totalEntries} entries — keep typing to narrow.`,
 			);
 			return;
 		}
 
 		if (totalMatches > visibleCount) {
 			this.countEl.setText(
-				`showing ${visibleCount} of ${totalMatches} matches — keep typing to narrow.`,
+				`Showing ${visibleCount} of ${totalMatches} matches — keep typing to narrow.`,
 			);
 			return;
 		}
 
-		this.countEl.setText(`showing ${totalMatches} matches.`);
+		this.countEl.setText(`Showing ${totalMatches} matches.`);
 	}
 
 	private async copyWordToClipboard(word: string): Promise<void> {

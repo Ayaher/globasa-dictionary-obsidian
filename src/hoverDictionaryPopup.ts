@@ -1,4 +1,4 @@
-import { Notice } from 'obsidian';
+import { Component, Notice } from 'obsidian';
 import { formatCategory, renderUnderscoreItalics } from './dictionaryRender';
 import { matchEntries, normalize } from './dictionarySearch';
 import type { WordEntry } from './wordListLoader';
@@ -18,7 +18,7 @@ type HoverPopupOptions = {
 type HoverToken = {
 	key: string;
 	token: string;
-	textNode: Text;
+	textNode: Node;
 	start: number;
 	end: number;
 	anchorRect: DOMRect;
@@ -27,21 +27,24 @@ type HighlightRegistry = {
 	set: (name: string, highlight: unknown) => void;
 	delete: (name: string) => void;
 };
-type HighlightEnvironment = {
-	Highlight?: new (range: Range) => unknown;
-	CSS?: { highlights?: HighlightRegistry };
-};
+type RegisterDomEvent = (
+	element: HTMLElement,
+	event: keyof HTMLElementEventMap,
+	callback: (event: Event) => unknown,
+	options?: boolean | AddEventListenerOptions,
+) => void;
 const NODE_IDS = new WeakMap<Node, number>();
 let NODE_ID_COUNTER = 0;
 
-export class HoverDictionaryPopupController {
+export class HoverDictionaryPopupController extends Component {
 	private readonly getEntries: () => WordEntry[];
 	private readonly getOptions: () => HoverPopupOptions;
 	private popupEl: HTMLDivElement | null = null;
 	private popupBodyEl: HTMLDivElement | null = null;
 	private popupPinButtonEl: HTMLButtonElement | null = null;
 	private popupCloseButtonEl: HTMLButtonElement | null = null;
-	private abortController: AbortController | null = null;
+	private listenersRegistered = false;
+	private isEnabled = false;
 	private currentTokenKey: string | null = null;
 	private currentEntry: WordEntry | null = null;
 	private pinnedPopups = new Map<string, HTMLDivElement>();
@@ -52,6 +55,7 @@ export class HoverDictionaryPopupController {
 		getOptions: () => HoverPopupOptions,
 		onHoverQuery: (query: string | null) => void,
 	) {
+		super();
 		this.getEntries = getEntries;
 		this.getOptions = getOptions;
 		this.onHoverQuery = onHoverQuery;
@@ -76,35 +80,41 @@ export class HoverDictionaryPopupController {
 	}
 
 	enable(): void {
-		if (this.abortController) {
-			return;
+		if (!this.listenersRegistered) {
+			this.registerDomEvent(document, 'mousemove', this.handleMouseMove, {
+				passive: true,
+			});
+			this.registerDomEvent(document, 'scroll', this.handleHide, {
+				passive: true,
+			});
+			this.registerDomEvent(document, 'keydown', this.handleHide);
+			this.registerDomEvent(document, 'click', this.handleClick);
+			this.listenersRegistered = true;
 		}
 
-		this.abortController = new AbortController();
-		document.addEventListener('mousemove', this.handleMouseMove, {
-			passive: true,
-			signal: this.abortController.signal,
-		});
-		document.addEventListener('scroll', this.handleHide, {
-			passive: true,
-			signal: this.abortController.signal,
-		});
-		document.addEventListener('keydown', this.handleHide, {
-			signal: this.abortController.signal,
-		});
-		document.addEventListener('click', this.handleClick, {
-			signal: this.abortController.signal,
-		});
+		this.isEnabled = true;
 	}
 
 	disable(): void {
-		this.abortController?.abort();
-		this.abortController = null;
+		this.isEnabled = false;
 		this.hideTransientPopup();
 		this.removeAllPinnedPopups();
 	}
 
+	onunload(): void {
+		this.disable();
+		this.popupEl?.remove();
+		this.popupEl = null;
+		this.popupBodyEl = null;
+		this.popupPinButtonEl = null;
+		this.popupCloseButtonEl = null;
+	}
+
 	private readonly handleMouseMove = (event: MouseEvent): void => {
+		if (!this.isEnabled) {
+			return;
+		}
+
 		const target = event.target;
 		if (!(target instanceof HTMLElement)) {
 			this.hideTransientPopup();
@@ -159,6 +169,10 @@ export class HoverDictionaryPopupController {
 	};
 
 	private readonly handleClick = (event: MouseEvent): void => {
+		if (!this.isEnabled) {
+			return;
+		}
+
 		const options = this.getOptions();
 		if (!options.enablePinnedPopups || options.routeToPanel) {
 			return;
@@ -176,6 +190,10 @@ export class HoverDictionaryPopupController {
 	};
 
 	private readonly handleHide = (): void => {
+		if (!this.isEnabled) {
+			return;
+		}
+
 		this.hideTransientPopup();
 	};
 
@@ -199,17 +217,18 @@ export class HoverDictionaryPopupController {
 	}
 
 	private applyWordHighlight(token: HoverToken): void {
-		const highlightEnvironment = window as unknown as HighlightEnvironment;
-		const HighlightConstructor = highlightEnvironment.Highlight;
-		const highlightRegistry = highlightEnvironment.CSS?.highlights;
-		if (!HighlightConstructor || !highlightRegistry) {
+		const highlightSupport = getHighlightSupport();
+		if (!highlightSupport) {
 			return;
 		}
 
 		const range = document.createRange();
 		range.setStart(token.textNode, token.start);
 		range.setEnd(token.textNode, token.end);
-		highlightRegistry.set(HIGHLIGHT_NAME, new HighlightConstructor(range));
+		highlightSupport.highlights.set(
+			HIGHLIGHT_NAME,
+			new highlightSupport.Highlight(range),
+		);
 	}
 
 	private positionPopupNearAnchor(anchorRect: DOMRect): void {
@@ -268,7 +287,7 @@ export class HoverDictionaryPopupController {
 			cls: 'globasa-dictionary-popup-action',
 		});
 		closeButton.type = 'button';
-		closeButton.addEventListener('click', () => {
+		this.registerDomEvent(closeButton, 'click', () => {
 			this.hideTransientPopup();
 		});
 		this.popupCloseButtonEl = closeButton;
@@ -330,7 +349,7 @@ export class HoverDictionaryPopupController {
 			cls: 'globasa-dictionary-popup-action',
 		});
 		closeButton.type = 'button';
-		closeButton.addEventListener('click', () => {
+		this.registerDomEvent(closeButton, 'click', () => {
 			pinned.remove();
 			this.pinnedPopups.delete(normalizedWord);
 		});
@@ -340,7 +359,9 @@ export class HoverDictionaryPopupController {
 		});
 		renderPopupContent(body, this.currentEntry);
 
-		makeElementDraggable(pinned, header);
+		makeElementDraggable(pinned, header, (element, event, handler, options) => {
+			this.registerDomEvent(element, event, handler, options);
+		});
 
 		this.pinnedPopups.set(normalizedWord, pinned);
 	}
@@ -412,7 +433,7 @@ function getTokenAtPoint(clientX: number, clientY: number): HoverToken | null {
 		return null;
 	}
 
-	const textNode = caretData.node as Text;
+	const textNode = caretData.node;
 	const text = textNode.textContent ?? '';
 	if (text.length === 0) {
 		return null;
@@ -462,22 +483,57 @@ function getTokenAtPoint(clientX: number, clientY: number): HoverToken | null {
 }
 
 function getCaretAtPoint(clientX: number, clientY: number): CaretPoint | null {
-	const doc = document as Document & {
-		caretPositionFromPoint?: (
-			x: number,
-			y: number,
-		) => { offsetNode: Node; offset: number } | null;
-	};
-
-	const caretPosition = doc.caretPositionFromPoint?.(clientX, clientY);
+	const caretPositionFromPoint = getCaretPositionFromPoint(document);
+	const caretPosition = caretPositionFromPoint?.(clientX, clientY);
 	if (!caretPosition) {
 		return null;
 	}
 
 	return {
-		node: caretPosition.offsetNode,
+		node: caretPosition.node,
 		offset: caretPosition.offset,
 	};
+}
+
+function getCaretPositionFromPoint(
+	doc: Document,
+): ((x: number, y: number) => CaretPoint | null) | null {
+	const candidate = Reflect.get(doc, 'caretPositionFromPoint');
+	if (typeof candidate !== 'function') {
+		return null;
+	}
+
+	return (x: number, y: number): CaretPoint | null => {
+		const result: unknown = candidate.call(doc, x, y);
+		if (!result || typeof result !== 'object') {
+			return null;
+		}
+
+		const offsetNode = getObjectProperty(result, 'offsetNode');
+		const offset = getObjectProperty(result, 'offset');
+		if (!isNode(offsetNode) || typeof offset !== 'number') {
+			return null;
+		}
+
+		return {
+			node: offsetNode,
+			offset,
+		};
+	};
+}
+
+function isNode(value: unknown): value is Node {
+	if (!value || typeof value !== 'object') {
+		return false;
+	}
+
+	const nodeType = getObjectProperty(value, 'nodeType');
+	return typeof nodeType === 'number';
+}
+
+function getObjectProperty(target: object, key: string): unknown {
+	const record = target as Record<string, unknown>;
+	return record[key];
 }
 
 function renderPopupContent(container: HTMLElement, entry: WordEntry): void {
@@ -504,14 +560,21 @@ function renderPopupContent(container: HTMLElement, entry: WordEntry): void {
 	);
 }
 
-function makeElementDraggable(element: HTMLElement, handle: HTMLElement): void {
+function makeElementDraggable(
+	element: HTMLElement,
+	handle: HTMLElement,
+	registerDomEvent: RegisterDomEvent,
+): void {
 	let startLeft = 0;
 	let startTop = 0;
 	let startMouseX = 0;
 	let startMouseY = 0;
 	let dragging = false;
 
-	handle.addEventListener('pointerdown', (event) => {
+	registerDomEvent(handle, 'pointerdown', (event) => {
+		if (!(event instanceof PointerEvent)) {
+			return;
+		}
 		if (!(event.target instanceof HTMLElement)) {
 			return;
 		}
@@ -529,7 +592,10 @@ function makeElementDraggable(element: HTMLElement, handle: HTMLElement): void {
 		event.preventDefault();
 	});
 
-	handle.addEventListener('pointermove', (event) => {
+	registerDomEvent(handle, 'pointermove', (event) => {
+		if (!(event instanceof PointerEvent)) {
+			return;
+		}
 		if (!dragging) {
 			return;
 		}
@@ -542,7 +608,10 @@ function makeElementDraggable(element: HTMLElement, handle: HTMLElement): void {
 		});
 	});
 
-	const endDrag = (event: PointerEvent): void => {
+	const endDrag = (event: Event): void => {
+		if (!(event instanceof PointerEvent)) {
+			return;
+		}
 		if (!dragging) {
 			return;
 		}
@@ -551,8 +620,8 @@ function makeElementDraggable(element: HTMLElement, handle: HTMLElement): void {
 		handle.releasePointerCapture(event.pointerId);
 	};
 
-	handle.addEventListener('pointerup', endDrag);
-	handle.addEventListener('pointercancel', endDrag);
+	registerDomEvent(handle, 'pointerup', endDrag);
+	registerDomEvent(handle, 'pointercancel', endDrag);
 }
 
 function isPointInsideRect(x: number, y: number, rect: DOMRect): boolean {
@@ -571,6 +640,53 @@ function getNodeKey(node: Node): string {
 }
 
 function clearWordHighlight(): void {
-	const highlightEnvironment = window as unknown as HighlightEnvironment;
-	highlightEnvironment.CSS?.highlights?.delete(HIGHLIGHT_NAME);
+	getHighlightSupport()?.highlights.delete(HIGHLIGHT_NAME);
+}
+
+function getHighlightSupport():
+	| { Highlight: new (range: Range) => unknown; highlights: HighlightRegistry }
+	| null {
+	const maybeEnvironment: unknown = window;
+	if (!isHighlightEnvironment(maybeEnvironment)) {
+		return null;
+	}
+
+	return {
+		Highlight: maybeEnvironment.Highlight,
+		highlights: maybeEnvironment.CSS.highlights,
+	};
+}
+
+function isHighlightEnvironment(
+	value: unknown,
+): value is {
+	Highlight: new (range: Range) => unknown;
+	CSS: { highlights: HighlightRegistry };
+} {
+	if (!value || typeof value !== 'object') {
+		return false;
+	}
+
+	if (!('Highlight' in value) || !('CSS' in value)) {
+		return false;
+	}
+
+	const highlightCandidate = value.Highlight;
+	const cssCandidate = value.CSS;
+	if (typeof highlightCandidate !== 'function') {
+		return false;
+	}
+	if (!cssCandidate || typeof cssCandidate !== 'object') {
+		return false;
+	}
+	if (!('highlights' in cssCandidate)) {
+		return false;
+	}
+
+	const highlights = cssCandidate.highlights;
+	if (!highlights || typeof highlights !== 'object') {
+		return false;
+	}
+
+	return 'set' in highlights && 'delete' in highlights;
 }

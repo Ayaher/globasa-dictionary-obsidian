@@ -39,6 +39,7 @@ export default class GlobasaDictionaryPlugin extends Plugin {
 			DICTIONARY_VIEW_TYPE,
 			(leaf) => new DictionaryPanelView(leaf, () => this.entries),
 		);
+		this.addChild(this.hoverPopupController);
 		this.addSettingTab(new GlobasaDictionarySettingTab(this.app, this));
 
 		await this.loadDictionary();
