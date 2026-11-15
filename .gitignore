@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build outputs (release artifacts)
+main.js
+*.map
+
+# Plugin runtime data
+data.json
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
