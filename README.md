@@ -56,6 +56,17 @@ The word list was extracted from the official [Globasa repository](https://githu
 
 The plugin works offline and does not require network requests for lookups.
 
+## Privacy and disclosures
+
+- No telemetry is collected.
+- No account is required.
+- No payment is required.
+- No network requests are made for dictionary lookups.
+
+## License
+
+This plugin is licensed under the 0BSD license. See [LICENSE](./LICENSE).
+
 ## Development
 
 Clone the project and install dependencies:

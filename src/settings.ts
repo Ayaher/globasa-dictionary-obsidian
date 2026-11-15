@@ -25,6 +25,36 @@ export class GlobasaDictionarySettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
+	getSettingDefinitions() {
+		return [
+			{
+				name: 'Enable hover dictionary popup',
+				desc: 'Show dictionary entry popups while hovering words in reading mode.',
+				control: { type: 'toggle', key: 'enableHoverPopup' },
+			},
+			{
+				name: 'Show hover results in dictionary panel',
+				desc: 'Disable popup overlays and push hover search results into the dictionary panel instead.',
+				control: { type: 'toggle', key: 'showHoverResultsInPanel' },
+			},
+			{
+				name: 'Use fuzzy matching in hover popup',
+				desc: 'When disabled, hover popup only appears for exact globasa word matches. Enable if you also hover english words.',
+				control: { type: 'toggle', key: 'enableHoverPopupFuzzyMatch' },
+			},
+			{
+				name: 'Enable hover popup in editor view',
+				desc: 'Allow hover popups in editing/source mode, not only reading mode.',
+				control: { type: 'toggle', key: 'enableHoverPopupInEditor' },
+			},
+			{
+				name: 'Enable pinnable hover popups',
+				desc: 'Allow pinning hover popups as draggable floating cards by clicking the hovered word. Only one pinned card per distinct word.',
+				control: { type: 'toggle', key: 'enablePinnedHoverPopups' },
+			},
+		];
+	}
+
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
