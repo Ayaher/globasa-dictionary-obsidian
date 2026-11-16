@@ -17,6 +17,16 @@ Globasa Dictionary is an offline dictionary plugin for Obsidian. It lets you qui
 - Optional routing of hover lookups to the dictionary panel (no overlay popup).
 - Optional pinnable, draggable hover cards.
 
+## Demo
+
+### Dictionary panel lookup
+
+![Dictionary panel demo](./images/dictionary-panel-ezgif.com-optimize.gif)
+
+### Hover popup lookup
+
+![Hover popup demo](./images/word-popup-ezgif.com-optimize.gif)
+
 ## Installation
 
 1. Download/install the plugin files into:
@@ -57,6 +67,7 @@ The plugin bundles the word list in `main.js`, works offline, and does not requi
 - No account is required.
 - No payment is required.
 - No network requests are made for dictionary lookups.
+- Clipboard write access is used only after explicit user action (clicking a dictionary result) to copy the selected Globasa word. The plugin does not read clipboard contents.
 
 ## License
 
