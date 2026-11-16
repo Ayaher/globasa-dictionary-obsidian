@@ -72,6 +72,9 @@ export class DictionaryPanelView extends ItemView {
 			placeholder: 'Search Globasa or English...',
 			cls: 'globasa-dictionary-search-input',
 		});
+		this.inputEl.spellcheck = false;
+		this.inputEl.setAttribute('autocorrect', 'off');
+		this.inputEl.setAttribute('autocapitalize', 'off');
 
 		this.clearButtonEl = searchRowEl.createEl('button', {
 			text: 'Clear',

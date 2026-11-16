@@ -1,9 +1,9 @@
 {
 	"id": "globasa-dictionary",
 	"name": "Globasa Dictionary",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "1.0.0",
-	"description": "Look up Globasa words offline with optional fuzzy search in Obsidian.",
+	"description": "Look up Globasa words offline with optional fuzzy search in your vault.",
 	"author": "Ayaher",
 	"isDesktopOnly": false
 }

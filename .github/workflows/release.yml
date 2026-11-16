@@ -36,7 +36,6 @@ jobs:
             main.js
             manifest.json
             styles.css
-            data/word-list.csv
 
       - name: Generate artifact attestation
         uses: actions/attest@v4
@@ -45,4 +44,3 @@ jobs:
             main.js
             manifest.json
             styles.css
-            data/word-list.csv

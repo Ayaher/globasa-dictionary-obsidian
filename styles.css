@@ -130,6 +130,26 @@
 	gap: 4px;
 }
 
+.globasa-dictionary-popup-hint {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 4px;
+	padding: 6px 8px;
+	border-radius: 6px;
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.globasa-dictionary-popup-hint-icon {
+	line-height: 1;
+}
+
+.globasa-dictionary-popup-hint-text {
+	line-height: 1.35;
+}
+
 .globasa-dictionary-popup-action {
 	padding: 2px 8px;
 	font-size: var(--font-ui-smaller);

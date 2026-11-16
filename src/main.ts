@@ -87,7 +87,7 @@ export default class GlobasaDictionaryPlugin extends Plugin {
 
 	private async loadDictionary() {
 		try {
-			this.entries = await loadDictionaryEntries(this.app, this.manifest.id);
+			this.entries = await loadDictionaryEntries();
 		} catch (error) {
 			const message =
 				error instanceof DictionaryLoadError

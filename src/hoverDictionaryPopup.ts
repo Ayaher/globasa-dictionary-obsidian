@@ -206,9 +206,17 @@ export class HoverDictionaryPopupController extends Component {
 		this.popupBodyEl.empty();
 		renderPopupContent(this.popupBodyEl, entry);
 		if (this.getOptions().enablePinnedPopups) {
-			this.popupBodyEl.createDiv({
+			const hintEl = this.popupBodyEl.createDiv({
 				cls: 'globasa-dictionary-popup-hint',
-				text: 'Tip: click the hovered word to pin this card.',
+			});
+			hintEl.createSpan({
+				cls: 'globasa-dictionary-popup-hint-icon',
+				text: '💡',
+				attr: { 'aria-hidden': 'true' },
+			});
+			hintEl.createSpan({
+				cls: 'globasa-dictionary-popup-hint-text',
+				text: 'Click the hovered word to pin this card.',
 			});
 		}
 		popup.dataset.word = normalize(entry.word);

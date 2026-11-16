@@ -1,7 +1,7 @@
 {
 	"name": "globasa-dictionary",
-	"version": "1.0.0",
-	"description": "Look up Globasa words offline in Obsidian.",
+	"version": "1.0.1",
+	"description": "Look up Globasa words offline in your vault.",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {

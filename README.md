@@ -25,7 +25,6 @@ Globasa Dictionary is an offline dictionary plugin for Obsidian. It lets you qui
    - `main.js`
    - `manifest.json`
    - `styles.css`
-   - `data/word-list.csv`
 3. In Obsidian, go to **Settings → Community plugins** and enable **Globasa Dictionary**.
 
 ## Usage
@@ -48,13 +47,9 @@ Available options:
 
 ## Data source
 
-The plugin reads dictionary data from:
-
-- `.obsidian/plugins/globasa-dictionary/data/word-list.csv`
-
 The word list was extracted from the official [Globasa repository](https://github.com/Globasa-Team/cdn-files/blob/main/api2/word-list.csv).
 
-The plugin works offline and does not require network requests for lookups.
+The plugin bundles the word list in `main.js`, works offline, and does not require network requests for lookups.
 
 ## Privacy and disclosures
 
